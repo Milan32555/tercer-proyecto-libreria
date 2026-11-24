@@ -18,7 +18,7 @@ export async function conSesion(context: BrowserContext) {
 }
 
 /** Carpeta de capturas (fuera del repositorio). Se puede cambiar con CAPTURAS_DIR. */
-const CAPTURAS = process.env.CAPTURAS_DIR ?? path.resolve(AQUI, "../../../Capturas-TercerPrototipo-Libreria/web");
+const CAPTURAS = process.env.CAPTURAS_DIR ?? path.resolve(AQUI, "../../../Capturas-TercerProyecto-Libreria/web");
 
 /** Guarda una captura de la pantalla actual: <capturas>/<escritorio|celular>/<nombre>.png */
 export async function capturar(page: Page, info: TestInfo, nombre: string, completa = false) {

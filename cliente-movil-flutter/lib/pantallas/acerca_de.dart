@@ -48,7 +48,7 @@ class AcercaDe extends StatelessWidget {
               children: [
                 _Dato('Aplicación', 'Librería · App móvil'),
                 const _Dato('Versión', _version),
-                _Dato('Proyecto', 'Tercer Prototipo · Desarrollo de Aplicaciones Empresariales\nUniversidad de Ibagué · 2026B'),
+                _Dato('Proyecto', 'Tercer Proyecto · Desarrollo de Aplicaciones Empresariales\nUniversidad de Ibagué · 2026B'),
               ],
             ),
           ),

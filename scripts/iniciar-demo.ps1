@@ -105,8 +105,8 @@ if (Escuchando 27017) {
         # Carpeta de datos: LIBRERIA_DATOS_MONGO, la de D:\01-Desarrollo si existe, o %LOCALAPPDATA%.
         $datos = $env:LIBRERIA_DATOS_MONGO
         if (-not $datos) {
-            $junto = Join-Path (Split-Path -Parent $raiz) 'Bases-de-Datos\mongo-tercer-prototipo'
-            if (Test-Path $junto) { $datos = $junto } else { $datos = Join-Path $env:LOCALAPPDATA 'TercerPrototipo-Libreria\mongo' }
+            $junto = Join-Path (Split-Path -Parent $raiz) 'Bases-de-Datos\mongo-tercer-proyecto'
+            if (Test-Path $junto) { $datos = $junto } else { $datos = Join-Path $env:LOCALAPPDATA 'TercerProyecto-Libreria\mongo' }
         }
         New-Item -ItemType Directory -Force (Join-Path $datos 'db'), (Join-Path $datos 'log') | Out-Null
         Start-Process -FilePath $mongod -WindowStyle Hidden -ArgumentList @(

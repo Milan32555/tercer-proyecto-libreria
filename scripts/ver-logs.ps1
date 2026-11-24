@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 
 # Una sola ventana de logs aunque se vuelva a ejecutar el lanzador.
 $ventanaNueva = $false
-$bloqueo = [System.Threading.Mutex]::new($true, 'Local\TercerPrototipoLibreriaLogs', [ref]$ventanaNueva)
+$bloqueo = [System.Threading.Mutex]::new($true, 'Local\TercerProyectoLibreriaLogs', [ref]$ventanaNueva)
 if (-not $ventanaNueva) {
     $bloqueo.Dispose()
     exit 0

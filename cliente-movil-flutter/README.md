@@ -1,6 +1,6 @@
 # Cliente móvil — Librería (Dart · Flutter)
 
-Cliente 2 del [Tercer Prototipo](../README.md). App Flutter (Android, web y Windows) que
+Cliente 2 del [Tercer Proyecto](../README.md). App Flutter (Android, web y Windows) que
 consume el servidor GraphQL (con MongoDB) para gestionar Libros y Ejemplares. Versión 3.0.0.
 
 ## Ejecutar

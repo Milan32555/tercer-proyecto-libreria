@@ -41,7 +41,7 @@ export default function AcercaDe() {
             <dt>Versión</dt>
             <dd>{VERSION}</dd>
             <dt>Proyecto</dt>
-            <dd>Tercer Prototipo · Desarrollo de Aplicaciones Empresariales · Universidad de Ibagué · 2026B</dd>
+            <dd>Tercer Proyecto · Desarrollo de Aplicaciones Empresariales · Universidad de Ibagué · 2026B</dd>
           </dl>
         </section>
 

@@ -1,6 +1,6 @@
 # Cliente web — Librería (TypeScript · React)
 
-Cliente 1 del [Tercer Prototipo](../README.md). Aplicación web que consume el servidor
+Cliente 1 del [Tercer Proyecto](../README.md). Aplicación web que consume el servidor
 GraphQL (con MongoDB) para gestionar Libros y Ejemplares. Versión 3.0.0.
 
 ## Ejecutar

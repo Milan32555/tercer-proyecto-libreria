@@ -1,5 +1,5 @@
 name: cliente_movil_libreria
-description: Cliente móvil (Flutter) del sistema de gestión de Librería - Tercer Prototipo con MongoDB
+description: Cliente móvil (Flutter) del sistema de gestión de Librería - Tercer Proyecto con microservicios
 publish_to: "none"
 version: 3.0.0+3
 

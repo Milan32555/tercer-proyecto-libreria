@@ -3,7 +3,7 @@
 **Desarrollo de Aplicaciones Empresariales · Universidad de Ibagué · 2026B** · Profesor: Carlos Lugo
 **Integrantes:** Misael Gallo Tangarife, Sara Zambrano, Santiago Guimel, Alejandra González · **Versión 3.0.0**
 
-Evolución del Tercer Prototipo. **Libro (A) → Ejemplar (B)** siguen en MongoDB detrás de GraphQL, y
+Proyecto final del curso. **Libro (A) → Ejemplar (B)** siguen en MongoDB detrás de GraphQL, y
 se agrega la **clase C, Préstamo**, como un **segundo microservicio REST con su propia base de
 datos**. Los clientes solo hablan con el microservicio GraphQL, que invoca al de préstamos de forma
 transparente. El acceso se protege con un **login básico de Spring Security**.
