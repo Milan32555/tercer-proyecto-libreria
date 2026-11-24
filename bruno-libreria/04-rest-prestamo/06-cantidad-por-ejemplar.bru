@@ -1,0 +1,24 @@
+meta {
+  name: Cantidad por ejemplar
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{urlPrestamos}}/prestamos/ejemplar/{{codigoEjemplar}}/cantidad
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuarioServicio}}
+  password: {{claveServicio}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  GraphQL lo usa para impedir eliminar un ejemplar con préstamos.
+}

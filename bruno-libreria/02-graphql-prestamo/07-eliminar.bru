@@ -1,0 +1,37 @@
+meta {
+  name: Eliminar
+  type: graphql
+  seq: 7
+}
+
+post {
+  url: {{urlLibreria}}/graphql
+  body: graphql
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuario}}
+  password: {{clave}}
+}
+
+body:graphql {
+  mutation ($codigo: ID!) {
+    eliminarPrestamo(codigo: $codigo) { id codigo codigoEjemplar prestatario fechaPrestamo diasPrestamo multa estado observaciones version tituloLibro autorLibro }
+  }
+}
+
+body:graphql:vars {
+  {
+    "codigo": "{{codigoPrestamo}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}
+
+docs {
+  Elimina y devuelve toda la información.
+}

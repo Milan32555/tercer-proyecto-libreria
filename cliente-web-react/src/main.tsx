@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+import Acceso from "./componentes/Acceso";
 
 // Fuentes incluidas en el proyecto (SIL Open Font License): la demo funciona sin internet.
 // IBM Plex Sans para la interfaz y Literata para los títulos de libros y el logotipo.
@@ -17,7 +18,7 @@ import "./estilos/app.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <Acceso><App /></Acceso>
     </BrowserRouter>
   </React.StrictMode>
 );

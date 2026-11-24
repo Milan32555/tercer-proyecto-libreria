@@ -1,0 +1,30 @@
+meta {
+  name: Ejemplares con su libro
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{urlLibreria}}/graphql
+  body: graphql
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuario}}
+  password: {{clave}}
+}
+
+body:graphql {
+  query {
+    ejemplaresConLibro(pagina: 0, tamanio: 10) {
+      contenido { codigo estado ubicacion isbnLibro tituloLibro autorLibro }
+      totalElementos
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}

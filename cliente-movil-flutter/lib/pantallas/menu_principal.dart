@@ -161,6 +161,8 @@ class _MenuPrincipalState extends State<MenuPrincipal> {
             const _Accesos(titulo: 'Libros', base: '/libros', singular: 'libro'),
             const SizedBox(height: Espacio.e3),
             const _Accesos(titulo: 'Ejemplares', base: '/ejemplares', singular: 'ejemplar'),
+            const SizedBox(height: Espacio.e3),
+            const _Accesos(titulo: 'Préstamos', base: '/prestamos', singular: 'préstamo'),
           ],
         ),
       ),

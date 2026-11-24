@@ -11,12 +11,13 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
  * prueba al arrancar) y el cliente web, y recorre todos los casos de uso en escritorio (1366x768)
  * y en celular (390x844), guardando una captura de cada pantalla.
  *
- * Requisitos: MongoDB en localhost:27017, el jar del servidor compilado (mvnw package) y
- * JAVA_HOME apuntando a un JDK 17. El puerto 8081 debe estar libre.
+ * Requisitos: MongoDB en localhost:27017, los jar de los dos microservicios compilados (mvnw package) y
+ * JAVA_HOME apuntando a un JDK 17. Los puertos 8081 y 8082 deben estar libres.
  *   npm run e2e
  */
 const JAVA = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", "java") : "java";
 const JAR = path.resolve(AQUI, "../servidor-libreria-mongo/target/ServidorLibreriaMongo-3.0.0.jar");
+const JAR_PRESTAMOS = path.resolve(AQUI, "../servicio-prestamos-rest/target/ServicioPrestamosRest-1.0.0.jar");
 const ARGUMENTOS = "--libreria.mongo.base=libreria_e2e --libreria.datos-iniciales.habilitado=true --libreria.datos-iniciales.reiniciar=true";
 
 export default defineConfig({
@@ -38,6 +39,12 @@ export default defineConfig({
     { name: "celular", use: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true } }
   ],
   webServer: [
+    {
+      command: `"${JAVA}" -Dfile.encoding=UTF-8 -jar "${JAR_PRESTAMOS}" --libreria.mongo.base=libreria_e2e_prestamos`,
+      url: "http://localhost:8082/prestamos/healthCheck",
+      reuseExistingServer: false,
+      timeout: 90_000
+    },
     {
       command: `"${JAVA}" -Dfile.encoding=UTF-8 -jar "${JAR}" ${ARGUMENTOS}`,
       url: "http://localhost:8081/graphiql",

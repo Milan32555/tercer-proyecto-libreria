@@ -30,10 +30,26 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
-      - name: Pruebas (base libreria_test en el MongoDB del workflow)
+      - name: Pruebas de servicio (100 % de cobertura) e integración (base libreria_test)
         run: ./mvnw -B verify
         env:
           LIBRERIA_MONGO_URI: mongodb://localhost:27017
+
+  servicio-prestamos:
+    name: Microservicio REST de Préstamo
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: servicio-prestamos-rest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Pruebas de servicio con Mockito (100 % de cobertura)
+        run: sh ./mvnw -B verify
 
   cliente-web:
     name: Cliente web (React)

@@ -90,6 +90,7 @@ export default function MenuPrincipal() {
           <div className="panel-cuerpo accesos">
             <Accesos titulo="Libros" base="/libros" />
             <Accesos titulo="Ejemplares" base="/ejemplares" />
+            <Accesos titulo="Préstamos" base="/prestamos" />
           </div>
         </section>
       </div>

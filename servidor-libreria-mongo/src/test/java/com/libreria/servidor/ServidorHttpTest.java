@@ -1,5 +1,6 @@
 package com.libreria.servidor;
 
+import com.libreria.servidor.integracion.ClientePrestamos;
 import com.libreria.servidor.servicio.ServicioLibro;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,11 +12,14 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,6 +42,9 @@ class ServidorHttpTest {
 
     @Autowired
     ServicioLibro servicioLibro;
+
+    @MockitoBean
+    ClientePrestamos clientePrestamos;
 
     private final HttpClient http = HttpClient.newHttpClient();
 
@@ -63,13 +70,41 @@ class ServidorHttpTest {
                 .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
                 .header("Origin", ORIGEN_CLIENTE_WEB)
                 .header("Access-Control-Request-Method", "POST")
-                .header("Access-Control-Request-Headers", "content-type,x-cliente")
+                .header("Access-Control-Request-Headers", "authorization,content-type,x-cliente")
                 .build();
 
         HttpResponse<String> respuesta = http.send(preflight, HttpResponse.BodyHandlers.ofString());
 
         assertThat(respuesta.statusCode()).isEqualTo(200);
         assertThat(respuesta.headers().firstValue("Access-Control-Allow-Methods")).isPresent();
+        assertThat(respuesta.headers().firstValue("Access-Control-Allow-Headers").orElse("").toLowerCase())
+                .contains("authorization");
+    }
+
+    @Test
+    void elLoginAceptaLasCredencialesCorrectas() throws Exception {
+        HttpResponse<String> respuesta = sesion(basic("profesor", "libreria"));
+
+        assertThat(respuesta.statusCode()).isEqualTo(200);
+        assertThat(respuesta.body()).contains("\"usuario\":\"profesor\"");
+    }
+
+    @Test
+    void elLoginRechazaLaClaveIncorrectaSinDialogoDelNavegador() throws Exception {
+        HttpResponse<String> respuesta = sesion(basic("profesor", "incorrecta"));
+
+        assertThat(respuesta.statusCode()).isEqualTo(401);
+        assertThat(respuesta.headers().firstValue("WWW-Authenticate")).isEmpty();
+    }
+
+    @Test
+    void graphQlExigeCredenciales() throws Exception {
+        HttpRequest sinCredenciales = HttpRequest.newBuilder(url())
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("{\"query\":\"{ revisionLibros }\"}"))
+                .build();
+
+        assertThat(http.send(sinCredenciales, HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(401);
     }
 
     @Test
@@ -88,9 +123,23 @@ class ServidorHttpTest {
                 .header("Content-Type", "application/json")
                 .header("Origin", ORIGEN_CLIENTE_WEB)
                 .header("X-Cliente", cliente)
+                .header("Authorization", basic("profesor", "libreria"))
                 .POST(HttpRequest.BodyPublishers.ofString(cuerpo))
                 .build();
         return http.send(peticion, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> sesion(String autorizacion) throws Exception {
+        HttpRequest peticion = HttpRequest.newBuilder(URI.create("http://localhost:" + puerto + "/api/sesion"))
+                .header("Authorization", autorizacion)
+                .GET()
+                .build();
+        return http.send(peticion, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private static String basic(String usuario, String clave) {
+        return "Basic " + Base64.getEncoder()
+                .encodeToString((usuario + ":" + clave).getBytes(StandardCharsets.UTF_8));
     }
 
     private URI url() {

@@ -5,6 +5,7 @@
 import 'package:cliente_movil_libreria/servicios/cliente_graphql.dart';
 import 'package:cliente_movil_libreria/servicios/servicio_ejemplar.dart';
 import 'package:cliente_movil_libreria/servicios/servicio_libro.dart';
+import 'package:cliente_movil_libreria/servicios/servicio_prestamo.dart';
 import 'package:cliente_movil_libreria/utilidades/formato.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,6 +16,10 @@ void main() {
   // ISBN de 4 dígitos y código EJ-000 válidos y distintos en cada ejecución.
   final isbn = '${7000 + sufijo % 1000}';
   final codigo = 'EJ-${900000 + sufijo % 99999}';
+
+  setUpAll(() async {
+    if (_url.isNotEmpty) await ClienteGraphQL().iniciarSesion('profesor', 'libreria');
+  });
 
   test(
     'CRUD completo de Libro y Ejemplar contra el servidor real (MongoDB)',
@@ -115,6 +120,27 @@ void main() {
       final detalle = await consultarDetalleLibro(isbn);
       expect(detalle!.totalEjemplares, 1);
       expect(detalle.totalPrestamos, 3);
+
+      // Clase C: la app solo habla con GraphQL, que invoca el microservicio REST.
+      final codigoPrestamo = 'PR-${900000 + sufijo % 99999}';
+      final prestamo = await crearPrestamo({
+        'codigo': codigoPrestamo,
+        'codigoEjemplar': codigo,
+        'prestatario': 'Prestatario móvil',
+        'fechaPrestamo': '2026-01-10T08:30:00',
+        'diasPrestamo': 7,
+        'multa': 0.0,
+        'estado': 'ACTIVO',
+      });
+      expect(prestamo.tituloLibro, 'Libro desde Flutter');
+      expect(prestamo.autorLibro, 'App Móvil');
+      expect((await listarPrestamos(codigoEjemplar: codigo)).contenido.single.codigo, codigoPrestamo);
+      await expectLater(
+        eliminarEjemplar(codigo),
+        throwsA(isA<ErrorGraphQL>().having((e) => e.mensaje, 'mensaje', contains('préstamo(s)'))),
+      );
+      await eliminarPrestamo(codigoPrestamo);
+      expect(await buscarPrestamo(codigoPrestamo), isNull);
 
       await eliminarEjemplar(codigo);
       expect(await buscarEjemplarPorCodigo(codigo), isNull);

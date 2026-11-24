@@ -1,0 +1,37 @@
+meta {
+  name: Insertar
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{urlPrestamos}}/prestamos
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuarioServicio}}
+  password: {{claveServicio}}
+}
+
+body:json {
+  {
+    "codigo": "{{codigoPrestamo}}",
+    "codigoEjemplar": "{{codigoEjemplar}}",
+    "prestatario": "Ana Pérez",
+    "fechaPrestamo": "2026-01-10T08:30:00",
+    "diasPrestamo": 7,
+    "multa": 1500.5,
+    "estado": "ACTIVO",
+    "observaciones": "Creado desde Bruno"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+docs {
+  Llamada directa al microservicio. Los clientes pasan por GraphQL, que es quien valida que el ejemplar exista.
+}

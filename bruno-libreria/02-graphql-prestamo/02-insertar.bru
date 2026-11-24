@@ -1,0 +1,46 @@
+meta {
+  name: Insertar
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{urlLibreria}}/graphql
+  body: graphql
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuario}}
+  password: {{clave}}
+}
+
+body:graphql {
+  mutation ($input: PrestamoInput!) {
+    crearPrestamo(input: $input) { id codigo codigoEjemplar prestatario fechaPrestamo diasPrestamo multa estado observaciones version tituloLibro autorLibro }
+  }
+}
+
+body:graphql:vars {
+  {
+    "input": {
+      "codigo": "{{codigoPrestamo}}",
+      "codigoEjemplar": "{{codigoEjemplar}}",
+      "prestatario": "Ana Pérez",
+      "fechaPrestamo": "2026-01-10T08:30:00",
+      "diasPrestamo": 7,
+      "multa": 1500.5,
+      "estado": "ACTIVO",
+      "observaciones": "Creado desde Bruno"
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}
+
+docs {
+  GraphQL valida que el ejemplar exista y luego invoca el microservicio REST.
+}

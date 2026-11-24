@@ -1,0 +1,30 @@
+meta {
+  name: Listar libros
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{urlLibreria}}/graphql
+  body: graphql
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuario}}
+  password: {{clave}}
+}
+
+body:graphql {
+  query {
+    libros(pagina: 0, tamanio: 10) {
+      contenido { isbn titulo autor precio genero cantidadEjemplares }
+      totalElementos
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}

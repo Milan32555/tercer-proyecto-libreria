@@ -2,6 +2,7 @@ package com.libreria.servidor;
 
 import com.libreria.servidor.dto.EjemplarInput;
 import com.libreria.servidor.dto.LibroInput;
+import com.libreria.servidor.integracion.ClientePrestamos;
 import com.libreria.servidor.model.EstadoEjemplar;
 import com.libreria.servidor.model.Genero;
 import com.libreria.servidor.servicio.ServicioRevisiones;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.LocalDateTime;
 
@@ -26,6 +28,10 @@ public abstract class PruebaBase {
 
     @Autowired
     protected MongoTemplate mongo;
+
+    /** El microservicio de préstamos se simula: por defecto ningún ejemplar tiene préstamos. */
+    @MockitoBean
+    protected ClientePrestamos clientePrestamos;
 
     @BeforeEach
     void limpiarBase() {

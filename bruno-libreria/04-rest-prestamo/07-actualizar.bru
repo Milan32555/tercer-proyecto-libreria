@@ -1,0 +1,33 @@
+meta {
+  name: Actualizar
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{urlPrestamos}}/prestamos/{{codigoPrestamo}}
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuarioServicio}}
+  password: {{claveServicio}}
+}
+
+body:json {
+  {
+    "codigo": "{{codigoPrestamo}}",
+    "codigoEjemplar": "{{codigoEjemplar}}",
+    "prestatario": "Ana Pérez",
+    "fechaPrestamo": "2026-01-10T08:30:00",
+    "diasPrestamo": 7,
+    "multa": 2500,
+    "estado": "DEVUELTO",
+    "observaciones": "Creado desde Bruno"
+  }
+}
+
+assert {
+  res.status: eq 200
+}

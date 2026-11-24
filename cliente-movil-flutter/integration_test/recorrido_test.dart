@@ -10,6 +10,7 @@
 
 import 'package:cliente_movil_libreria/main.dart';
 import 'package:cliente_movil_libreria/pantallas/comunes/campo_fecha.dart';
+import 'package:cliente_movil_libreria/servicios/cliente_graphql.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -108,6 +109,7 @@ void main() {
       await tocar(find.widgetWithText(FilledButton, 'Buscar'));
     }
 
+    await ClienteGraphQL().iniciarSesion('profesor', 'libreria');
     await tester.pumpWidget(const AplicacionLibreria());
 
     // ── Inicio, menú y Acerca de ──────────────────────────────────────────────

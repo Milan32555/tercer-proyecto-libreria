@@ -1,3 +1,4 @@
+import { cerrarSesion, encabezadoAutorizacion } from "../sesion";
 // URL del servidor GraphQL. Para usar otra máquina/puerto, crear un archivo .env con
 // VITE_URL_GRAPHQL=http://<ip-del-servidor>:8081/graphql (no hace falta tocar el código).
 export const URL_GRAPHQL = import.meta.env.VITE_URL_GRAPHQL ?? "http://localhost:8081/graphql";
@@ -41,13 +42,19 @@ export class ClienteGraphQL {
     try {
       respuesta = await fetch(this.url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", ...ENCABEZADO_CLIENTE },
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...ENCABEZADO_CLIENTE, ...encabezadoAutorizacion() },
+        credentials: "omit",
         body: JSON.stringify({ query, variables })
       });
     } catch {
       throw new ErrorGraphQL(
         `No se pudo conectar con el servidor (${this.url}). Verifique que esté en ejecución.`
       );
+    }
+
+    if (respuesta.status === 401) {
+      cerrarSesion();
+      throw new ErrorGraphQL("La sesión terminó. Inicia sesión nuevamente.");
     }
 
     // Se lee el cuerpo aunque el código HTTP sea de error: ahí viene el mensaje del servidor.

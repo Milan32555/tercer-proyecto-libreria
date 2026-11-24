@@ -85,15 +85,16 @@ describe("Aplicación", () => {
     expect(screen.queryByText("No se pudo conectar con el servidor.")).not.toBeInTheDocument();
   });
 
-  it("el menú principal tiene una opción por caso de uso de Libro y de Ejemplar", () => {
+  it("el menú principal tiene una opción por caso de uso de Libro, Ejemplar y Préstamo", () => {
     renderizarEn("/");
 
     for (const opcion of ["Listar", "Consultar", "Adicionar", "Actualizar", "Eliminar"]) {
-      expect(within(menu()).getAllByRole("link", { name: opcion })).toHaveLength(2);
+      expect(within(menu()).getAllByRole("link", { name: opcion })).toHaveLength(3);
     }
     expect(within(menu()).getByRole("link", { name: "Detalle" })).toHaveAttribute("href", "/libros/detalle");
     expect(within(menu()).getByRole("list", { name: "Libros" })).toBeInTheDocument();
     expect(within(menu()).getByRole("list", { name: "Ejemplares" })).toBeInTheDocument();
+    expect(within(menu()).getByRole("list", { name: "Préstamos" })).toBeInTheDocument();
   });
 
   it("tiene Ayuda > Acerca de... con los integrantes, la versión y el estado del servidor", async () => {

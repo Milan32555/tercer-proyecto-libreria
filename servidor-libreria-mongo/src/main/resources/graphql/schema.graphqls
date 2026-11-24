@@ -17,6 +17,54 @@ enum EstadoEjemplar {
     DADO_DE_BAJA
 }
 
+enum EstadoPrestamo {
+    ACTIVO
+    DEVUELTO
+    CANCELADO
+}
+
+"Clase C: préstamo de un ejemplar. Vive en el microservicio REST; este servidor lo invoca de forma transparente."
+type Prestamo {
+    id: ID!
+    codigo: ID!
+    "Código del ejemplar prestado (debe existir)"
+    codigoEjemplar: String!
+    prestatario: String!
+    fechaPrestamo: LocalDateTime!
+    diasPrestamo: Int!
+    multa: Float!
+    estado: EstadoPrestamo!
+    "Opcional (máximo 500 caracteres)"
+    observaciones: String
+    version: Int
+    "Atributo de la clase A: título del libro del ejemplar"
+    tituloLibro: String
+    "Atributo de la clase A: autor del libro del ejemplar"
+    autorLibro: String
+}
+
+type PaginaPrestamos {
+    contenido: [Prestamo!]!
+    pagina: Int!
+    tamanio: Int!
+    totalElementos: Int!
+    totalPaginas: Int!
+}
+
+"Datos de un préstamo para crearlo o actualizarlo. Al actualizar, el código indica qué préstamo se modifica."
+input PrestamoInput {
+    codigo: ID!
+    codigoEjemplar: String!
+    prestatario: String!
+    fechaPrestamo: LocalDateTime!
+    diasPrestamo: Int!
+    multa: Float!
+    estado: EstadoPrestamo!
+    observaciones: String
+    "Solo al actualizar: la versión que se leyó al buscar el préstamo"
+    version: Int
+}
+
 "Colección A (maestro): documento de la colección libros."
 type Libro {
     "Llave primaria: el _id (ObjectId) del documento, en hexadecimal"
@@ -201,6 +249,11 @@ type Query {
     "Aumenta cada vez que la colección ejemplares cambia (Observer de los clientes)"
     revisionEjemplares: Int!
 
+    "Listar préstamos con título y autor del libro, filtrados por ejemplar y/o estado"
+    prestamos(pagina: Int! = 0, tamanio: Int! = 10, codigoEjemplar: String, estado: EstadoPrestamo): PaginaPrestamos!
+    "Consultar UN préstamo por su código"
+    prestamoPorCodigo(codigo: ID!): Prestamo
+
     "Resumen del inventario (3 tareas concurrentes)"
     resumenInventario: ResumenInventario!
 }
@@ -217,8 +270,15 @@ type Mutation {
     crearEjemplar(input: EjemplarInput!): Ejemplar
     "Actualiza el ejemplar cuyo código viene en el input"
     actualizarEjemplar(input: EjemplarInput!): Ejemplar
-    "Elimina el ejemplar y devuelve sus datos"
+    "Elimina el ejemplar (solo si no tiene préstamos) y devuelve sus datos"
     eliminarEjemplar(codigo: ID!): Ejemplar
+
+    "Crea el préstamo (su código no debe existir y el ejemplar sí)"
+    crearPrestamo(input: PrestamoInput!): Prestamo
+    "Actualiza el préstamo cuyo código viene en el input"
+    actualizarPrestamo(input: PrestamoInput!): Prestamo
+    "Elimina el préstamo y devuelve sus datos"
+    eliminarPrestamo(codigo: ID!): Prestamo
 
     "Solo desarrollo (perfil carga): genera datos de prueba de carga"
     generarDatosCarga(libros: Int! = 1000, ejemplares: Int! = 5000): ResultadoCarga

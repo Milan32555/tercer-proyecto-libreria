@@ -1,0 +1,25 @@
+meta {
+  name: Listar
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{urlPrestamos}}/prestamos?pagina=0&tamanio=10
+  body: none
+  auth: basic
+}
+
+params:query {
+  pagina: 0
+  tamanio: 10
+}
+
+auth:basic {
+  username: {{usuarioServicio}}
+  password: {{claveServicio}}
+}
+
+assert {
+  res.status: eq 200
+}

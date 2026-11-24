@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../modelos/ejemplar.dart';
 import '../../modelos/libro.dart';
+import '../../modelos/prestamo.dart';
 import '../../tema/tema.dart';
 import '../../utilidades/formato.dart';
 import 'componentes.dart';
@@ -82,6 +83,55 @@ class FichaEjemplar extends StatelessWidget {
         if (ejemplar.id != null) _Dato('ID en MongoDB (_id)', _codigoId(ejemplar.id!), ancho: true),
         if (ejemplar.libroId != null) _Dato('ID del libro (libroId)', _codigoId(ejemplar.libroId!), ancho: true),
         if (ejemplar.version != null) _Dato('Versión', Text('${ejemplar.version}')),
+      ],
+    );
+  }
+}
+
+/// Estado de un préstamo con los colores de la app.
+class InsigniaPrestamo extends StatelessWidget {
+  const InsigniaPrestamo(this.estado, {super.key});
+
+  final String estado;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (estado) {
+      'ACTIVO' => 'PRESTADO',
+      'DEVUELTO' => 'DISPONIBLE',
+      _ => 'DADO_DE_BAJA',
+    };
+    return InsigniaEstado(color, texto: etiquetaEstadoPrestamo(estado));
+  }
+}
+
+/// Muestra TODA la información de un Préstamo y el título y autor de su libro (clase A).
+class FichaPrestamo extends StatelessWidget {
+  const FichaPrestamo({super.key, required this.prestamo, this.titulo = 'Préstamo'});
+
+  final Prestamo prestamo;
+  final String titulo;
+
+  @override
+  Widget build(BuildContext context) {
+    return _MarcoFicha(
+      tipo: titulo,
+      titulo: prestamo.codigo,
+      subtitulo: '${prestamo.tituloLibro ?? 'Libro no disponible'} · ${prestamo.autorLibro ?? ''}',
+      insignia: InsigniaPrestamo(prestamo.estado),
+      datos: [
+        _Dato('Código', Text(prestamo.codigo)),
+        _Dato('Estado', InsigniaPrestamo(prestamo.estado)),
+        _Dato('Código del ejemplar', Text(prestamo.codigoEjemplar)),
+        _Dato('Prestatario', Text(prestamo.prestatario)),
+        _Dato('Título del libro', _opcional(prestamo.tituloLibro)),
+        _Dato('Autor del libro', _opcional(prestamo.autorLibro)),
+        _Dato('Fecha del préstamo', Text(formatearFechaIso(prestamo.fechaPrestamo))),
+        _Dato('Días del préstamo', Text('${prestamo.diasPrestamo}')),
+        _Dato('Multa', Text(formatearPrecio(prestamo.multa))),
+        _Dato('Observaciones', _opcional(prestamo.observaciones), ancho: true),
+        _Dato('ID en MongoDB (_id)', _codigoId(prestamo.id), ancho: true),
+        _Dato('Versión', Text('${prestamo.version}')),
       ],
     );
   }

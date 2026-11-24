@@ -4,6 +4,7 @@ import 'package:cliente_movil_libreria/modelos/libro.dart';
 import 'package:cliente_movil_libreria/observador/listado_observable.dart';
 import 'package:cliente_movil_libreria/pantallas/comunes/campo_fecha.dart';
 import 'package:cliente_movil_libreria/pantallas/comunes/tabla_datos.dart';
+import 'package:cliente_movil_libreria/servicios/cliente_graphql.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -56,6 +57,8 @@ Finder botonMenu(WidgetTester tester) => find.byTooltip(textosMaterial(tester).o
 Finder campoDeBusqueda() => find.descendant(of: find.byType(SearchBar), matching: find.byType(TextField));
 
 void main() {
+  setUp(() => ClienteGraphQL().usuario.value = 'profesor');
+
   group('Inicio', () {
     testWidgets('muestra las cifras que calcula el servidor (la pantalla no cuenta nada)', (tester) async {
       final servidor = ServidorSimulado({
@@ -108,11 +111,11 @@ void main() {
       await tocar(tester, botonMenu(tester));
 
       final menu = find.byType(NavigationDrawer);
-      for (final seccion in ['Libros', 'Ejemplares', 'Ayuda']) {
+      for (final seccion in ['Libros', 'Ejemplares', 'Préstamos', 'Ayuda']) {
         expect(find.descendant(of: menu, matching: find.text(seccion)), findsOneWidget);
       }
       for (final opcion in ['Listar', 'Consultar', 'Adicionar', 'Actualizar', 'Eliminar']) {
-        expect(find.descendant(of: menu, matching: find.text(opcion)), findsNWidgets(2));
+        expect(find.descendant(of: menu, matching: find.text(opcion)), findsNWidgets(3));
       }
       expect(find.descendant(of: menu, matching: find.text('Detalle')), findsOneWidget);
 
@@ -132,7 +135,7 @@ void main() {
       await abrir(tester, '/');
 
       await tocar(tester, botonMenu(tester));
-      await tocar(tester, find.descendant(of: find.byType(NavigationDrawer), matching: find.text('Adicionar')).last);
+      await tocar(tester, find.descendant(of: find.byType(NavigationDrawer), matching: find.text('Adicionar')).at(1));
 
       expect(find.text('Adicionar ejemplar'), findsWidgets);
       expect(find.widgetWithText(TextField, 'Código del ejemplar'), findsOneWidget);

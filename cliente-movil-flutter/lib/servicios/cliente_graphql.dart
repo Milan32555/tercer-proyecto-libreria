@@ -46,6 +46,33 @@ class ClienteGraphQL {
   static const encabezadoCliente = {'X-Cliente': 'movil'};
 
   http.Client _http = http.Client();
+  final usuario = ValueNotifier<String?>(null);
+  String? _autorizacion;
+
+  void cerrarSesion() {
+    _autorizacion = null;
+    usuario.value = null;
+  }
+
+  Future<void> iniciarSesion(String nombre, String clave) async {
+    final credencial = 'Basic ${base64Encode(utf8.encode('${nombre.trim()}:$clave'))}';
+    final http.Response respuesta;
+    try {
+      respuesta = await _http.get(Uri.parse(urlGraphQL).resolve('api/sesion'),
+        headers: {'Authorization': credencial, 'Accept': 'application/json'}).timeout(_tiempoMaximo);
+    } on TimeoutException {
+      throw ErrorGraphQL('El servidor no respondió a tiempo.');
+    } on Exception {
+      throw ErrorGraphQL('No se pudo conectar con el servidor.');
+    }
+    if (respuesta.statusCode == 401) throw ErrorGraphQL('Usuario o contraseña incorrectos.');
+    final datos = _decodificar(respuesta.bodyBytes);
+    if (respuesta.statusCode != 200 || datos?['usuario'] is! String) {
+      throw ErrorGraphQL('No se pudo iniciar sesión. Intenta nuevamente.');
+    }
+    _autorizacion = credencial;
+    usuario.value = datos!['usuario'] as String;
+  }
 
   /// Permite que las pruebas reemplacen la conexión real por una simulada.
   @visibleForTesting
@@ -58,7 +85,12 @@ class ClienteGraphQL {
       respuesta = await _http
           .post(
             Uri.parse(url),
-            headers: {'Content-Type': 'application/json', 'Accept': 'application/json', ...encabezadoCliente},
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              ...encabezadoCliente,
+              'Authorization': ?_autorizacion,
+            },
             body: jsonEncode({'query': query, 'variables': variables ?? {}}),
           )
           .timeout(_tiempoMaximo);
@@ -66,6 +98,11 @@ class ClienteGraphQL {
       throw ErrorGraphQL('El servidor no respondió a tiempo ($url).');
     } on Exception {
       throw ErrorGraphQL('No se pudo conectar con el servidor ($url). Verifique que esté en ejecución.');
+    }
+
+    if (respuesta.statusCode == 401) {
+      cerrarSesion();
+      throw ErrorGraphQL('La sesión terminó. Inicia sesión nuevamente.');
     }
 
     // Se lee el cuerpo aunque el código HTTP sea de error: ahí viene el mensaje del servidor.

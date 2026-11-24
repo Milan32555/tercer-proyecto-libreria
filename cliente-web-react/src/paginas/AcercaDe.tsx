@@ -134,9 +134,9 @@ function Diagrama() {
         <Nodo icono={Smartphone} titulo="App móvil" detalle="Flutter · Dart" />
       </div>
       <span className="conector">GraphQL sobre HTTP (POST)</span>
-      <Nodo icono={Server} titulo="Servidor GraphQL" detalle="Java 17 · Spring Boot · toda la lógica de negocio" />
+      <Nodo icono={Server} titulo="Servidor GraphQL" detalle="Java 17 · Spring Boot · invoca por REST el microservicio de préstamos" />
       <span className="conector">Spring Data MongoDB</span>
-      <Nodo icono={Database} titulo="MongoDB" detalle="Colecciones libros y ejemplares" />
+      <Nodo icono={Database} titulo="MongoDB" detalle="Colecciones libros y ejemplares · préstamos en su propia base" />
 
       <figcaption className="estado-servidor" role="status">
         {estado.tipo === "comprobando" && <span>Comprobando el servidor…</span>}

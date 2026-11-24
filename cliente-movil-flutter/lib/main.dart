@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'tema/tema.dart';
 
+import 'pantallas/acceso.dart';
 import 'pantallas/menu_principal.dart';
 import 'pantallas/acerca_de.dart';
 
@@ -18,6 +19,12 @@ import 'pantallas/ejemplar/actualizar_ejemplar.dart';
 import 'pantallas/ejemplar/eliminar_ejemplar.dart';
 import 'pantallas/ejemplar/listar_ejemplares.dart';
 import 'pantallas/ejemplar/consultar_ejemplar.dart';
+
+import 'pantallas/prestamo/agregar_prestamo.dart';
+import 'pantallas/prestamo/actualizar_prestamo.dart';
+import 'pantallas/prestamo/eliminar_prestamo.dart';
+import 'pantallas/prestamo/listar_prestamos.dart';
+import 'pantallas/prestamo/consultar_prestamo.dart';
 
 void main() {
   runApp(const AplicacionLibreria());
@@ -44,7 +51,7 @@ class AplicacionLibreria extends StatelessWidget {
       // libre (con el color de fondo) para que ningún botón ni texto quede tapado.
       builder: (context, child) => ColoredBox(
         color: kGris25,
-        child: SafeArea(top: false, left: false, right: false, child: child!),
+        child: SafeArea(top: false, left: false, right: false, child: Acceso(child: child!)),
       ),
       initialRoute: rutaInicial,
       routes: {
@@ -63,6 +70,12 @@ class AplicacionLibreria extends StatelessWidget {
         '/ejemplares/eliminar': (context) => const EliminarEjemplar(),
         '/ejemplares/listar': (context) => const ListarEjemplares(),
         '/ejemplares/consultar': (context) => const ConsultarEjemplar(),
+
+        '/prestamos/agregar': (context) => const AgregarPrestamo(),
+        '/prestamos/actualizar': (context) => const ActualizarPrestamo(),
+        '/prestamos/eliminar': (context) => const EliminarPrestamo(),
+        '/prestamos/listar': (context) => const ListarPrestamos(),
+        '/prestamos/consultar': (context) => const ConsultarPrestamo(),
       },
     );
   }

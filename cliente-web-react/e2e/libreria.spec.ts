@@ -1,12 +1,16 @@
 import { expect, test } from "@playwright/test";
 import {
-  abrirMenu, capturar, codigoUnico, crearEjemplar, crearLibro, elegir, esperarAviso, graphql, isbnUnico
+  abrirMenu, capturar, codigoUnico, conSesion, crearEjemplar, crearLibro, elegir, esperarAviso, graphql, isbnUnico
 } from "./utilidades";
 
 // Recorre TODOS los casos de uso de Libro y de Ejemplar contra el servidor real con MongoDB.
 // Cada prueba crea sus propios datos (con un ISBN/código único) o solo lee los datos de prueba.
 
 type PaginaTotal = { totalElementos: number; totalPaginas: number };
+
+test.beforeEach(async ({ context }) => {
+  await conSesion(context);
+});
 
 test.describe("Menú principal y Ayuda", () => {
   test("el inicio muestra exactamente lo que calcula el servidor (3 tareas)", async ({ page, request }, info) => {
@@ -26,7 +30,7 @@ test.describe("Menú principal y Ayuda", () => {
     await page.goto("/");
     const menu = await abrirMenu(page);
     for (const opcion of ["Listar", "Consultar", "Adicionar", "Actualizar", "Eliminar"]) {
-      await expect(menu.getByRole("link", { name: opcion, exact: true })).toHaveCount(2);
+      await expect(menu.getByRole("link", { name: opcion, exact: true })).toHaveCount(3);
     }
     await expect(menu.getByRole("link", { name: "Detalle", exact: true })).toHaveCount(1);
     await capturar(page, info, "02-menu");

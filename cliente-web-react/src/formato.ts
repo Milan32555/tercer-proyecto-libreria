@@ -30,6 +30,13 @@ export function aValorDeInputFecha(iso: string): string {
   return iso.slice(0, 16);
 }
 
+const ESTADOS_PRESTAMO: Record<string, string> = { ACTIVO: "Activo", DEVUELTO: "Devuelto", CANCELADO: "Cancelado" };
+
+/** Estado de un préstamo en texto legible. */
+export function textoEstadoPrestamo(estado: string): string {
+  return ESTADOS_PRESTAMO[estado] ?? estado;
+}
+
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",

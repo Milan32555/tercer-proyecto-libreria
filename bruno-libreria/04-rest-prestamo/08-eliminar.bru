@@ -1,0 +1,20 @@
+meta {
+  name: Eliminar
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{urlPrestamos}}/prestamos/{{codigoPrestamo}}
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuarioServicio}}
+  password: {{claveServicio}}
+}
+
+assert {
+  res.status: eq 200
+}

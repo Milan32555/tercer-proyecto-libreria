@@ -1,10 +1,21 @@
-import { APIRequestContext, Page, TestInfo, expect } from "@playwright/test";
+import { APIRequestContext, BrowserContext, Page, TestInfo, expect } from "@playwright/test";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 export const URL_GRAPHQL = "http://localhost:8081/graphql";
+
+/** Credencial de demostración del servidor (HTTP Basic). */
+export const AUTORIZACION = `Basic ${Buffer.from("profesor:libreria").toString("base64")}`;
+
+/** Deja la sesión iniciada en todas las pestañas del contexto. */
+export async function conSesion(context: BrowserContext) {
+  await context.addInitScript((credencial) => {
+    window.sessionStorage.setItem("libreria.autorizacion", credencial);
+    window.sessionStorage.setItem("libreria.usuario", "profesor");
+  }, AUTORIZACION);
+}
 
 /** Carpeta de capturas (fuera del repositorio). Se puede cambiar con CAPTURAS_DIR. */
 const CAPTURAS = process.env.CAPTURAS_DIR ?? path.resolve(AQUI, "../../../Capturas-TercerPrototipo-Libreria/web");
@@ -21,7 +32,7 @@ export async function graphql<T = Record<string, unknown>>(
   query: string,
   variables: Record<string, unknown> = {}
 ): Promise<T> {
-  const respuesta = await request.post(URL_GRAPHQL, { data: { query, variables }, headers: { "X-Cliente": "e2e" } });
+  const respuesta = await request.post(URL_GRAPHQL, { data: { query, variables }, headers: { "X-Cliente": "e2e", Authorization: AUTORIZACION } });
   const cuerpo = await respuesta.json();
   if (cuerpo.errors?.length) throw new Error(cuerpo.errors[0].message);
   return cuerpo.data as T;

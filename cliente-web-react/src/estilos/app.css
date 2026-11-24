@@ -1599,3 +1599,12 @@ main:focus {
 .seccion-formulario-error {
   padding: 0 var(--esp-4) var(--esp-4);
 }
+
+
+/* Acceso y cierre de sesión */
+.acceso-pagina { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
+.acceso-panel { width: min(100%, 420px); padding: 32px; }
+.acceso-panel h1 { margin: 28px 0 8px; }
+.acceso-panel > p { margin-bottom: 28px; }
+.acceso-marca { gap: 12px; }
+.sesion-salir { cursor: pointer; border: 0; background: transparent; width: 100%; font: inherit; text-align: left; }

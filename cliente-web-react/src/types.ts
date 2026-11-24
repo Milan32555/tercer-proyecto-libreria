@@ -179,3 +179,25 @@ export interface ResumenInventario {
   duracionMs: number;
   tareas: ResultadoTarea[];
 }
+
+
+export type EstadoPrestamo = "ACTIVO" | "DEVUELTO" | "CANCELADO";
+
+export interface PrestamoInput {
+  codigo: string;
+  codigoEjemplar: string;
+  prestatario: string;
+  fechaPrestamo: string;
+  diasPrestamo: number;
+  multa: number;
+  estado: EstadoPrestamo;
+  observaciones: string | null;
+  version?: number | null;
+}
+
+export interface Prestamo extends PrestamoInput {
+  id: string;
+  version: number;
+  tituloLibro: string | null;
+  autorLibro: string | null;
+}

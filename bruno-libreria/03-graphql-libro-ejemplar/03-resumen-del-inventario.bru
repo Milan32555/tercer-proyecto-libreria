@@ -1,0 +1,32 @@
+meta {
+  name: Resumen del inventario
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: {{urlLibreria}}/graphql
+  body: graphql
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuario}}
+  password: {{clave}}
+}
+
+body:graphql {
+  query {
+    resumenInventario {
+      totalLibros
+      totalEjemplares
+      valorInventario
+      tareas { nombre hilo exitosa }
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}

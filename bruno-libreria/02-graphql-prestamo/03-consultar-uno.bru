@@ -1,0 +1,37 @@
+meta {
+  name: Consultar uno
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: {{urlLibreria}}/graphql
+  body: graphql
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuario}}
+  password: {{clave}}
+}
+
+body:graphql {
+  query ($codigo: ID!) {
+    prestamoPorCodigo(codigo: $codigo) { id codigo codigoEjemplar prestatario fechaPrestamo diasPrestamo multa estado observaciones version tituloLibro autorLibro }
+  }
+}
+
+body:graphql:vars {
+  {
+    "codigo": "{{codigoPrestamo}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}
+
+docs {
+  Rúbrica: consulta de UN solo objeto por parámetro.
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../servicios/cliente_graphql.dart';
 import '../tema/tema.dart';
 
 /// Un caso de uso por opción (mismo orden y nombres que el cliente web).
@@ -25,6 +26,7 @@ final _casosLibro = [..._casosDeUso.take(2), _detalle, ..._casosDeUso.skip(2)];
 final List<String> _rutas = [
   for (final c in _casosLibro) '/libros/${c.ruta}',
   for (final c in _casosDeUso) '/ejemplares/${c.ruta}',
+  for (final c in _casosDeUso) '/prestamos/${c.ruta}',
   '/acerca-de',
 ];
 
@@ -61,8 +63,22 @@ class MenuLateral extends StatelessWidget {
         seccion('Ejemplares'),
         for (final c in _casosDeUso) destino(c.texto, c.icono),
         const Padding(padding: EdgeInsets.symmetric(horizontal: 28, vertical: Espacio.e2), child: Divider()),
+        seccion('Préstamos'),
+        for (final c in _casosDeUso) destino(c.texto, c.icono),
+        const Padding(padding: EdgeInsets.symmetric(horizontal: 28, vertical: Espacio.e2), child: Divider()),
         seccion('Ayuda'),
         destino('Acerca de...', LucideIcons.info),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, Espacio.e2, 16, 0),
+          child: TextButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              ClienteGraphQL().cerrarSesion();
+            },
+            icon: const Icon(LucideIcons.logOut, size: 18),
+            label: const Text('Cerrar sesión'),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(28, Espacio.e6, 16, Espacio.e4),
           child: Text('Versión $versionApp', style: textos.bodySmall!.copyWith(color: kGris500)),

@@ -64,12 +64,8 @@ public class ServicioResumenInventario {
         CompletableFuture<Parcial<Double>> valorTotal =
                 lanzar("valor-total-inventario", ejemplares::sumarPrecioReposicion, -1.0);
 
-        try {
-            CompletableFuture.allOf(totalLibros, porEstado, valorTotal).join();
-        } catch (CompletionException e) {
-            // No debería pasar: cada tarea ya maneja su propia falla con exceptionally.
-            log.error("Fallo inesperado esperando las tareas del resumen", e);
-        }
+        // Cada tarea maneja su propia falla con exceptionally, así que esta espera no lanza errores.
+        CompletableFuture.allOf(totalLibros, porEstado, valorTotal).join();
 
         Map<EstadoEjemplar, Long> conteo = porEstado.join().valor();
         int totalEjemplares = (int) conteo.values().stream().mapToLong(Long::longValue).sum();
@@ -103,13 +99,18 @@ public class ServicioResumenInventario {
                 }, ejecutor)
                 .orTimeout(tiempoMaximoMs, TimeUnit.MILLISECONDS)
                 .exceptionally(ex -> {
-                    Throwable causa = ex instanceof CompletionException && ex.getCause() != null ? ex.getCause() : ex;
+                    Throwable causa = causaReal(ex);
                     String mensaje = causa instanceof TimeoutException
                             ? "Superó el tiempo máximo de " + tiempoMaximoMs + " ms"
                             : causa.getClass().getSimpleName() + ": " + causa.getMessage();
                     log.error("Tarea {} falló: {}", nombre, mensaje, causa);
                     return new Parcial<>(valorSiFalla, new ResultadoTarea(nombre, "-", 0, false, mensaje));
                 });
+    }
+
+    /** La falla original de una tarea, sin el envoltorio de CompletableFuture. */
+    static Throwable causaReal(Throwable ex) {
+        return ex instanceof CompletionException && ex.getCause() != null ? ex.getCause() : ex;
     }
 
     private static Map<EstadoEjemplar, Long> conteoVacio() {

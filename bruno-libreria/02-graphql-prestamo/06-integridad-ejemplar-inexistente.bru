@@ -1,0 +1,46 @@
+meta {
+  name: Integridad - ejemplar inexistente
+  type: graphql
+  seq: 6
+}
+
+post {
+  url: {{urlLibreria}}/graphql
+  body: graphql
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuario}}
+  password: {{clave}}
+}
+
+body:graphql {
+  mutation ($input: PrestamoInput!) {
+    crearPrestamo(input: $input) { codigo }
+  }
+}
+
+body:graphql:vars {
+  {
+    "input": {
+      "codigo": "PR-999",
+      "codigoEjemplar": "EJ-999999",
+      "prestatario": "Ana Pérez",
+      "fechaPrestamo": "2026-01-10T08:30:00",
+      "diasPrestamo": 7,
+      "multa": 1500.5,
+      "estado": "ACTIVO",
+      "observaciones": "Creado desde Bruno"
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isDefined
+}
+
+docs {
+  Debe rechazarse: el préstamo necesita un ejemplar registrado.
+}

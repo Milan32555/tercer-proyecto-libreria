@@ -1,0 +1,41 @@
+meta {
+  name: Listar con filtro
+  type: graphql
+  seq: 4
+}
+
+post {
+  url: {{urlLibreria}}/graphql
+  body: graphql
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuario}}
+  password: {{clave}}
+}
+
+body:graphql {
+  query ($codigoEjemplar: String, $estado: EstadoPrestamo) {
+    prestamos(pagina: 0, tamanio: 10, codigoEjemplar: $codigoEjemplar, estado: $estado) {
+      contenido { id codigo codigoEjemplar prestatario fechaPrestamo diasPrestamo multa estado observaciones version tituloLibro autorLibro }
+      totalElementos
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "codigoEjemplar": "{{codigoEjemplar}}",
+    "estado": "ACTIVO"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.errors: isUndefined
+}
+
+docs {
+  Filtra por ejemplar y estado.
+}

@@ -51,6 +51,31 @@ String? validarCodigoEjemplar(String? valor) {
       : 'Usa el formato EJ-000 (EJ- y de 3 a 6 dígitos).';
 }
 
+/// Código del préstamo: PR- seguido de 3 a 6 dígitos (PR-000).
+String? validarCodigoPrestamo(String? valor) {
+  final texto = valor?.trim() ?? '';
+  if (texto.isEmpty) return _obligatorio;
+  return RegExp(r'^PR-\d{3,6}$', caseSensitive: false).hasMatch(texto)
+      ? null
+      : 'Usa el formato PR-000 (PR- y de 3 a 6 dígitos).';
+}
+
+/// Días del préstamo: entero entre 1 y 365.
+String? validarDiasPrestamo(String? valor) {
+  final error = validarEnteroPositivo(valor);
+  if (error != null) return error;
+  return int.parse(valor!.trim()) > 365 ? 'No puede superar 365 días.' : null;
+}
+
+/// Decimal obligatorio, cero o mayor (la multa).
+String? validarDecimalNoNegativo(String? valor) {
+  final texto = valor?.trim() ?? '';
+  if (texto.isEmpty) return _obligatorio;
+  final numero = double.tryParse(texto);
+  if (numero == null || !numero.isFinite) return 'Escribe un número válido.';
+  return numero >= 0 ? null : 'No puede ser negativo.';
+}
+
 /// Fecha obligatoria que no puede ser futura.
 String? validarFechaNoFutura(DateTime? valor, {DateTime? ahora}) {
   if (valor == null) return 'Elige la fecha y la hora.';

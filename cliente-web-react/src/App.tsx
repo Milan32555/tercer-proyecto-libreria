@@ -18,6 +18,12 @@ import EliminarEjemplar from "./paginas/ejemplar/EliminarEjemplar";
 import ListarEjemplares from "./paginas/ejemplar/ListarEjemplares";
 import ConsultarEjemplar from "./paginas/ejemplar/ConsultarEjemplar";
 
+import AgregarPrestamo from "./paginas/prestamo/AgregarPrestamo";
+import ConsultarPrestamo from "./paginas/prestamo/ConsultarPrestamo";
+import ListarPrestamos from "./paginas/prestamo/ListarPrestamos";
+import ActualizarPrestamo from "./paginas/prestamo/ActualizarPrestamo";
+import EliminarPrestamo from "./paginas/prestamo/EliminarPrestamo";
+
 /** Una ruta (pantalla) por caso de uso. */
 export default function App() {
   return (
@@ -39,6 +45,12 @@ export default function App() {
             <Route path="/ejemplares/agregar" element={<AgregarEjemplar />} />
             <Route path="/ejemplares/actualizar" element={<ActualizarEjemplar />} />
             <Route path="/ejemplares/eliminar" element={<EliminarEjemplar />} />
+
+            <Route path="/prestamos/agregar" element={<AgregarPrestamo />} />
+            <Route path="/prestamos/consultar" element={<ConsultarPrestamo />} />
+            <Route path="/prestamos/listar" element={<ListarPrestamos />} />
+            <Route path="/prestamos/actualizar" element={<ActualizarPrestamo />} />
+            <Route path="/prestamos/eliminar" element={<EliminarPrestamo />} />
 
             <Route path="/acerca-de" element={<AcercaDe />} />
           </Routes>

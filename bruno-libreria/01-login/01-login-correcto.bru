@@ -1,0 +1,24 @@
+meta {
+  name: Login correcto
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{urlLibreria}}/api/sesion
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuario}}
+  password: {{clave}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Con usuario y contraseña correctos responde el usuario autenticado.
+}

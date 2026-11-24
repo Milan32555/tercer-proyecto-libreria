@@ -1,22 +1,57 @@
-# Librería — Tercer Prototipo (MongoDB)
+# Librería — Tercer Proyecto (Microservicios)
 
 **Desarrollo de Aplicaciones Empresariales · Universidad de Ibagué · 2026B** · Profesor: Carlos Lugo
 **Integrantes:** Misael Gallo Tangarife, Sara Zambrano, Santiago Guimel, Alejandra González · **Versión 3.0.0**
 
-Continuación del Segundo Proyecto (mismo caso **Libro → Ejemplar** y los mismos clientes React y
-Flutter). Lo nuevo: los datos ya no están en listas en memoria, sino en **MongoDB**, a través del
-framework **Spring Data MongoDB**, en **dos colecciones** (`libros` y `ejemplares`).
+Evolución del Tercer Prototipo. **Libro (A) → Ejemplar (B)** siguen en MongoDB detrás de GraphQL, y
+se agrega la **clase C, Préstamo**, como un **segundo microservicio REST con su propia base de
+datos**. Los clientes solo hablan con el microservicio GraphQL, que invoca al de préstamos de forma
+transparente. El acceso se protege con un **login básico de Spring Security**.
 
 | Proyecto | Tecnología | Carpeta |
 |---|---|---|
-| Servidor GraphQL | Java 17 · Spring Boot 4.1.2 · Spring for GraphQL · Spring Data MongoDB · Lombok · Bean Validation | [`servidor-libreria-mongo/`](servidor-libreria-mongo) |
+| Microservicio 1: Libro y Ejemplar (GraphQL, puerto 8081) | Java 17 · Spring Boot 4.1.2 · Spring for GraphQL · Spring Security · Spring Data MongoDB · Lombok · Bean Validation | [`servidor-libreria-mongo/`](servidor-libreria-mongo) |
+| Microservicio 2: Préstamo (REST, puerto 8082) | Java 17 · Spring Boot 4.1.2 · Spring Web · Spring Security · Spring Data MongoDB | [`servicio-prestamos-rest/`](servicio-prestamos-rest) |
 | Cliente web | TypeScript · React 18 · Vite | [`cliente-web-react/`](cliente-web-react) |
 | App móvil | Dart · Flutter (Android) | [`cliente-movil-flutter/`](cliente-movil-flutter) |
-| Base de datos | MongoDB 8 (no relacional) | `localhost:27017`, base `libreria_evaluacion` |
+| Bases de datos | MongoDB 8 (no relacional) | `libreria_evaluacion` (libros, ejemplares) y `libreria_prestamos` (prestamos) |
+
+**Login de demostración:** usuario `profesor`, contraseña `libreria`. Se cambian con las variables
+de entorno `LIBRERIA_USUARIO` y `LIBRERIA_CLAVE`.
 
 ---
 
-## Arquitectura
+## Microservicios
+
+```mermaid
+flowchart LR
+    W["Cliente web<br/>React"] -- "GraphQL + HTTP Basic" --> AB
+    M["App móvil<br/>Flutter"] -- "GraphQL + HTTP Basic" --> AB
+    AB["Microservicio 1<br/>Libro y Ejemplar<br/>GraphQL · 8081"] -- "REST + credencial de servicio" --> C["Microservicio 2<br/>Préstamo<br/>REST · 8082"]
+    AB --> DB1[("libreria_evaluacion<br/>libros · ejemplares")]
+    C --> DB2[("libreria_prestamos<br/>prestamos")]
+```
+
+- **Transparencia:** los clientes usan `prestamos`, `crearPrestamo`, etc. en GraphQL y no conocen la
+  URL del servicio REST (`integracion/ClientePrestamos` usa `RestClient`).
+- **Integridad referencial:** no se crea un préstamo si el ejemplar no existe, y no se elimina un
+  ejemplar con préstamos. Si el servicio de préstamos no responde, el ejemplar tampoco se elimina.
+- **Uno a uno por consulta:** por cada préstamo, `ServicioPrestamo` busca su ejemplar y luego su libro
+  para completar `tituloLibro` y `autorLibro` (dos atributos de la clase A).
+- **Reglas de Préstamo:** código único `PR-000`, un solo préstamo activo por ejemplar (índice parcial
+  único), fecha no futura, días entre 1 y 365, multa no negativa y concurrencia con `@Version`.
+
+| Método | Ruta REST | Para qué |
+|---|---|---|
+| GET | `/prestamos/healthCheck` | Estado del servicio (público) |
+| GET | `/prestamos?pagina&tamanio&codigoEjemplar&estado` | Listar con filtros |
+| GET | `/prestamos/{codigo}` | Consultar uno |
+| GET | `/prestamos/ejemplar/{codigoEjemplar}/cantidad` | Contar préstamos de un ejemplar |
+| POST | `/prestamos` | Insertar (201) |
+| PUT | `/prestamos/{codigo}` | Actualizar |
+| DELETE | `/prestamos/{codigo}` | Eliminar |
+
+## Arquitectura del microservicio GraphQL
 
 ```mermaid
 flowchart LR
@@ -46,11 +81,12 @@ flowchart LR
   | Paquete | Contenido |
   |---|---|
   | `model` | Documentos `Libro` y `Ejemplar` (`@Document`, `@Id`, `@Indexed`, `@Version`, Lombok `@Builder`), enums y tipos de respuesta (`Pagina`, `EjemplarConLibro`, `DetalleLibro`, `ResumenInventario`…) |
-  | `dto` | `LibroInput`, `EjemplarInput` (un solo input para crear y actualizar) y la validación propia `@IsbnValido` |
+  | `dto` | `LibroInput`, `EjemplarInput`, `PrestamoInput` (un solo input para crear y actualizar) y la validación propia `@IsbnValido` |
   | `repository` | `LibroRepository`, `EjemplarRepository` (`MongoRepository`) y sus implementaciones de consultas propias |
-  | `servicio` | `ServicioLibro`, `ServicioEjemplar`, `ServicioRevisiones`, `ObservadorColecciones`, `GeneradorDatosCarga` |
-  | `controller` | `LibroController`, `EjemplarController`, `ResumenController` (GraphQL) |
-  | `config` | `MongoConfig` (`AbstractMongoClientConfiguration`), `EjecutorTareasConfig`, escalar `LocalDateTime`, `RegistroOperaciones` (X-Cliente), `DatosIniciales` |
+  | `integracion` | `ClientePrestamos`: invoca el microservicio REST y traduce sus errores |
+  | `servicio` | `ServicioLibro`, `ServicioEjemplar`, `ServicioPrestamo` (fachada de C), `ServicioRevisiones`, `ObservadorColecciones`, `GeneradorDatosCarga` |
+  | `controller` | `LibroController`, `EjemplarController`, `PrestamoController`, `ResumenController` (GraphQL) y `SesionController` (login) |
+  | `config` | `MongoConfig` (`AbstractMongoClientConfiguration`), `SeguridadConfig` (Spring Security), `EjecutorTareasConfig`, escalar `LocalDateTime`, `RegistroOperaciones` (X-Cliente), `DatosIniciales` |
   | `excepciones` | `LibreriaException` (con tipo) y `ManejadorErrores` (errores GraphQL en español) |
   | `tareas` | `ServicioResumenInventario` (3 tareas concurrentes) |
 
@@ -231,15 +267,19 @@ classDiagram
 | Query | `resumenInventario` | Resumen calculado por las 3 tareas concurrentes |
 | Mutation | `crearLibro` · `actualizarLibro(input: LibroInput)` · `eliminarLibro(isbn)` | CRUD de Libro (un solo input; el isbn indica cuál se actualiza) |
 | Mutation | `crearEjemplar` · `actualizarEjemplar(input: EjemplarInput)` · `eliminarEjemplar(codigo)` | CRUD de Ejemplar (un solo input; el código indica cuál se actualiza) |
+| Query | `prestamos(pagina, tamanio, codigoEjemplar, estado)` | Listar préstamos con filtro y dos atributos de Libro |
+| Query | `prestamoPorCodigo(codigo)` | Consultar UN préstamo |
+| Mutation | `crearPrestamo` · `actualizarPrestamo(input: PrestamoInput)` · `eliminarPrestamo(codigo)` | CRUD de Préstamo (invoca el microservicio REST) |
 | Mutation | `generarDatosCarga(libros, ejemplares)` | Solo desarrollo (perfil `carga`): 1.000 libros y 5.000 ejemplares |
 
-La consola GraphiQL queda en <http://localhost:8081/graphiql>.
+La consola GraphiQL queda en <http://localhost:8081/graphiql> y pide el mismo usuario y contraseña.
 
 ## Reglas de negocio (en el servidor, nunca en la GUI)
 
 - ISBN y código únicos (índices únicos de MongoDB).
 - No se elimina un libro que tiene ejemplares.
 - Un ejemplar solo se crea para un libro existente y no cambia de libro.
+- No se elimina un ejemplar que tiene préstamos; un préstamo no cambia de código ni de ejemplar.
 - `numeroPrestamos` suma 1 cuando el ejemplar **pasa** a PRESTADO; en Actualizar el valor que envía el cliente se ignora.
 - Validaciones con Bean Validation (`@Valid`) y mensajes en español: obligatorios, positivos (`@Positive`, `@PositiveOrZero`), fechas no futuras (`@PastOrPresent`), ISBN de 1 a 4 dígitos (`@IsbnValido`) y código EJ-000 (`@Pattern`), largos máximos de los opcionales.
 
@@ -286,26 +326,41 @@ para el celular, Android platform-tools (`adb`).
 
 **Todo de una vez (Windows):** doble clic en `iniciar-demo.cmd`. Comprueba que MongoDB esté arriba
 (si no, lo inicia: primero el servicio de Windows y, si pide administrador, como proceso del
-usuario), levanta el servidor, el cliente web y, si hay un celular conectado por USB, instala y
-abre la app (`adb reverse tcp:8081 tcp:8081`).
+usuario), levanta los dos microservicios, el cliente web y, si hay un celular conectado por USB,
+instala y abre la app (`adb reverse tcp:8081 tcp:8081`). Si el código cambió, recompila antes.
 
 **Por partes:**
 
 ```bash
-# 1. Servidor (base de evaluacion vacia, sin registros de ejemplo)
+# 1. Microservicio REST de Préstamo (base libreria_prestamos)
+cd servicio-prestamos-rest
+./mvnw spring-boot:run                                   # http://localhost:8082/prestamos
+
+# 2. Microservicio GraphQL de Libro y Ejemplar (base libreria_evaluacion)
 cd servidor-libreria-mongo
 ./mvnw spring-boot:run                                   # http://localhost:8081/graphql
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=carga  # base libreria_carga con 1.000 + 5.000
 
-# 2. Cliente web
+# 3. Cliente web
 cd cliente-web-react && npm install && npm run dev      # http://localhost:5173
 
-# 3. App (celular por USB)
+# 4. App (celular por USB)
 adb reverse tcp:8081 tcp:8081
 cd cliente-movil-flutter && flutter run --dart-define=URL_GRAPHQL=http://localhost:8081/graphql
 ```
 
-La URL y la base de MongoDB se cambian con `LIBRERIA_MONGO_URI` y `LIBRERIA_MONGO_BASE`.
+| Variable | Para qué | Valor por defecto |
+|---|---|---|
+| `LIBRERIA_USUARIO` / `LIBRERIA_CLAVE` | Login de los clientes | `profesor` / `libreria` |
+| `PRESTAMOS_URL` | Dónde está el microservicio REST | `http://localhost:8082` |
+| `PRESTAMOS_USUARIO` / `PRESTAMOS_CLAVE` | Credencial entre microservicios (igual en ambos) | `servicio-libreria` / `prestamos-local` |
+| `PRESTAMOS_MONGO_URI` / `PRESTAMOS_MONGO_BASE` | MongoDB del microservicio REST | `mongodb://localhost:27017` / `libreria_prestamos` |
+| `LIBRERIA_MONGO_URI` / `LIBRERIA_MONGO_BASE` | MongoDB del microservicio GraphQL | `mongodb://localhost:27017` / `libreria_evaluacion` |
+
+**Probar las APIs con Bruno:** abre la colección [`bruno-libreria/`](bruno-libreria) y elige el
+entorno **Demo**. Tiene login, GraphQL de Préstamo, Libro y Ejemplar, y el REST de Préstamo. El
+lanzador la agrega a Bruno y lo abre. Las peticiones de Insertar usan `codigoEjemplar` del entorno,
+que debe ser un ejemplar existente.
 
 **Verificar las colecciones en MongoDB:** `scripts\verificar-mongo.cmd` (usa el driver de MongoDB
 que descarga Maven) o, con `mongosh`:
@@ -323,10 +378,14 @@ db.ejemplares.aggregate([{ $lookup: { from: "libros", localField: "libroId", for
 
 | Proyecto | Comando | Resultado |
 |---|---|---|
-| Servidor | `./mvnw verify` (base `libreria_test`, se limpia antes de cada prueba) | **74 pruebas**: servicios, reglas, validaciones, consultas propias, GraphQL completo, HTTP/CORS/X-Cliente, estructura de MongoDB, concurrencia, 3 tareas y carga |
+| Microservicio GraphQL, servicios | `./mvnw test` (JUnit 5 + Mockito, sin MongoDB) | **187 pruebas**, **100 % de líneas y ramas** en `servicio` y `tareas` (JaCoCo) |
+| Microservicio GraphQL, integración | `./mvnw verify` (base `libreria_test`) | **78 pruebas**: GraphQL, login, HTTP/CORS, MongoDB, concurrencia, 3 tareas y carga |
+| Microservicio REST, servicios | `./mvnw test` (JUnit 5 + Mockito, sin MongoDB) | **33 pruebas**, **100 % de líneas y ramas** en `servicio` (JaCoCo) |
 | Web | `npm run lint`, `npm test`, `npm run build` | **84 pruebas** unitarias (Vitest) |
-| Web E2E | `npm run e2e` (Playwright contra el servidor real con MongoDB) | **32 pruebas**: todos los casos de uso de ambos objetos en escritorio y celular, con capturas |
-| App | `flutter analyze`, `flutter test` | **46 pruebas** + integración contra el servidor real |
+| Web E2E | `npm run e2e` (Playwright con los dos microservicios y MongoDB) | **38 pruebas**: login y todos los casos de uso en escritorio y celular, con capturas |
+| App | `flutter analyze`, `flutter test` | **55 pruebas** + integración contra los microservicios reales |
+
+El reporte de cobertura queda en `target/site/jacoco/index.html` de cada microservicio.
 
 **Concurrencia:** 20 altas simultáneas del mismo ISBN → exactamente 1 éxito y 19 "Ya existe";
 2 actualizaciones con la misma versión → 1 éxito y 1 conflicto; 2 préstamos simultáneos del mismo
@@ -349,25 +408,23 @@ ejemplar → 1 conflicto y el contador queda bien (+1).
 
 | Punto | Dónde |
 |---|---|
-| Arquitectura con GUI, modelo y clases estructurales en paquetes | Tabla de paquetes de arriba; clientes en `paginas/` (web) y `pantallas/` (app) |
-| GraphQL | `schema.graphqls` + controllers con `@QueryMapping` / `@MutationMapping` / `@SchemaMapping` / `@BatchMapping` |
-| Dos clientes en lenguaje distinto (web y app) | React/TypeScript y Flutter/Dart |
-| Base no relacional con framework, dos colecciones | MongoDB + Spring Data MongoDB: `libros` y `ejemplares` (`@Document`, `MongoRepository`) |
-| Prohibido guardar en listas | No hay repositorios en memoria: todo pasa por `MongoRepository` / `MongoTemplate` |
-| Insertar 15 % | Adicionar Libro / Adicionar Ejemplar (validación en cliente y servidor) |
-| Eliminar 20 % (buscar antes y mostrar TODO) | Eliminar: ficha con todos los atributos, incluidos opcionales, `_id`, `libroId` y versión; confirmación |
-| Actualizar 20 % (buscar antes y mostrar TODO) | Actualizar: ficha completa + formulario; versión para la concurrencia |
-| Consultar UN objeto por un parámetro 20 % | Libro por ISBN o título; Ejemplar por código o ISBN + ubicación |
-| Listar 25 %: grilla, filtro, dos consultas propias, Ejemplar con 2 atributos de Libro | `libros` / `librosPorPrecioYGenero` y `ejemplares` / `ejemplaresConLibro` (todos los atributos + título y autor), paginados |
-| Llave primaria, obligatorios y opcionales, validaciones, ≥ 5 atributos (int, double, String, LocalDateTime, otro) | Ver el modelo: `_id`, `numeroPaginas`/`numeroPrestamos` (int), `precio` (double), `titulo` (String), fechas (LocalDateTime), `genero`/`estado` (enum), opcionales editorial, sinopsis y observaciones |
-| Dos consultas propias, una con maestro y detalle | `librosPorPrecioYGenero` (Criteria), `ejemplaresConLibro` (`$lookup`) y `detalleLibro` (maestro + detalle) |
-| Búsqueda individual con dos criterios por objeto | Ver Consultar |
-| Excepciones con mensajes coherentes | `LibreriaException` + `ManejadorErrores` (código en `extensions.codigo`) |
-| Una ventana por caso de uso; menú con Ayuda → Acerca de | Rutas de la web y de la app; Acerca de con los 4 integrantes y versión 3.0.0 |
-| `@Id` y `ObjectId` como llave foránea | `Libro.id`, `Ejemplar.id` con `@Id`; `Ejemplar.libroId` es `ObjectId` |
-| Logging en 3 niveles y try/catch | Servicios y controllers; `logback-spring.xml` |
-| Servicio con 3 tareas concurrentes | `tareas/ServicioResumenInventario` |
-| Concurrencia y cantidad de datos | Índices únicos, `@Version`, paginación, perfil `carga`, `ConcurrenciaTest` y `CargaTest` |
+| **Requisito:** arquitectura con GUI, modelo y clases estructurales en paquetes | Tablas de paquetes; clientes en `paginas/` (web) y `pantallas/` (app) |
+| **Requisito:** GraphQL en el primer microservicio | `schema.graphqls` + controllers con `@QueryMapping` / `@MutationMapping` |
+| **Requisito:** segundo microservicio GraphQL o REST | `servicio-prestamos-rest`: `@RestController`, puerto 8082 |
+| **Requisito:** cliente en otro lenguaje | React/TypeScript y Flutter/Dart |
+| **Requisito:** base no relacional | MongoDB + Spring Data; A y B en dos colecciones y C en su propia base |
+| Invocación transparente del segundo microservicio | Los clientes solo llaman a GraphQL; `ServicioPrestamo` usa `ClientePrestamos` |
+| **Insertar C 20 %** con integridad referencial | Adicionar préstamo: el ejemplar debe existir |
+| **Eliminar C 20 %** (buscar antes y mostrar TODO) | Eliminar préstamo: ficha completa y confirmación |
+| **Listar C con parámetro 20 %** (todos los objetos y 2 atributos de A) | Listar préstamos: filtro por ejemplar y estado, con título y autor del libro |
+| **Actualizar C 20 %** (buscar antes y mostrar TODO) | Actualizar préstamo: ficha completa + formulario, con `@Version` |
+| **Consulta C con parámetro 20 %** (UN objeto) | Consultar préstamo por código |
+| Login básico de Spring Security | `SeguridadConfig`, `GET /api/sesion` y pantalla de acceso en web y app |
+| Pruebas de servicio con cobertura del 100 % | JUnit 5 + Mockito; JaCoCo hace fallar `mvn test` si baja de 100 % |
+| Llave primaria, obligatorios, opcionales, validaciones, ≥ 5 atributos | `Prestamo`: `id`, `diasPrestamo` (int), `multa` (double), `prestatario` (String), `fechaPrestamo` (LocalDateTime), `estado` (enum), `observaciones` (opcional) |
+| Prohibido guardar en listas | Todo pasa por `MongoRepository` / `MongoTemplate` |
+| Excepciones con mensajes coherentes | `LibreriaException`, `PrestamoException` y sus manejadores de errores |
+| Una ventana por caso de uso; menú con Ayuda → Acerca de | Rutas de la web y de la app; Acerca de con los 4 integrantes y la versión |
 | Subir a GitHub | Este repositorio, con integración continua (GitHub Actions) |
 
 ## Patrones de diseño

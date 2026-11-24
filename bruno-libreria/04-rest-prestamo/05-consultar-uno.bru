@@ -1,0 +1,20 @@
+meta {
+  name: Consultar uno
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{urlPrestamos}}/prestamos/{{codigoPrestamo}}
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: {{usuarioServicio}}
+  password: {{claveServicio}}
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,6 +1,7 @@
 # Deja todo listo para la demostracion:
 #   0. MongoDB en localhost:27017 (si no esta arriba, lo levanta como proceso del usuario)
-#   1. Servidor GraphQL (Java + Spring Data MongoDB) en el puerto 8081
+#   1. Microservicio REST de Prestamo (clase C, base propia) en el puerto 8082
+#      y microservicio GraphQL de Libro y Ejemplar en el puerto 8081 (con login)
 #   2. Cliente web (React) en http://localhost:5173 y lo abre en el navegador
 #   3. App Flutter en el celular conectado por USB (adb reverse + instalar + abrir)
 #   4. Ventana con los logs del servidor en vivo (operaciones de la web y la app)
@@ -15,11 +16,20 @@ $raiz     = Split-Path -Parent $PSScriptRoot
 $servidor = Join-Path $raiz 'servidor-libreria-mongo'
 $web      = Join-Path $raiz 'cliente-web-react'
 $movil    = Join-Path $raiz 'cliente-movil-flutter'
+$prestamos = Join-Path $raiz 'servicio-prestamos-rest'
 $jar      = Join-Path $servidor 'target\ServidorLibreriaMongo-3.0.0.jar'
+$jarPrestamos = Join-Path $prestamos 'target\ServicioPrestamosRest-1.0.0.jar'
 $apk      = Join-Path $movil 'build\app\outputs\flutter-apk\app-release.apk'
 $paquete  = 'com.libreria.cliente_movil_libreria'
 $urlGraphQL = 'http://localhost:8081/graphql'
+$urlSesion  = 'http://localhost:8081/api/sesion'
+$urlPrestamos = 'http://localhost:8082/prestamos/healthCheck'
 $urlWeb     = 'http://localhost:5173'
+
+# Credenciales de la demostracion; se cambian con LIBRERIA_USUARIO y LIBRERIA_CLAVE.
+$usuarioLogin = if ($env:LIBRERIA_USUARIO) { $env:LIBRERIA_USUARIO } else { 'profesor' }
+$claveLogin   = if ($env:LIBRERIA_CLAVE) { $env:LIBRERIA_CLAVE } else { 'libreria' }
+$credencial   = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("${usuarioLogin}:${claveLogin}"))
 
 function Paso($texto)  { Write-Host ''; Write-Host "==> $texto" -ForegroundColor Cyan }
 function Bien($texto)  { Write-Host "    OK  $texto" -ForegroundColor Green }
@@ -42,10 +52,24 @@ function Escuchando($puerto) {
 
 function ServidorResponde {
     try {
-        $r = Invoke-RestMethod -Uri $urlGraphQL -Method Post -ContentType 'application/json' `
-            -Body '{"query":"{ revisionLibros }"}' -TimeoutSec 3
-        return $null -ne $r.data
+        $r = Invoke-RestMethod -Uri $urlSesion -Headers @{ Authorization = "Basic $credencial" } -TimeoutSec 3
+        return $null -ne $r.usuario
     } catch { return $false }
+}
+
+function PrestamosResponde {
+    try {
+        return (Invoke-RestMethod -Uri $urlPrestamos -TimeoutSec 3) -eq 'OK'
+    } catch { return $false }
+}
+
+# True si falta el archivo o si algun fuente es mas nuevo que el (evita demostrar una version vieja).
+function Desactualizado($archivo, [string[]]$fuentes) {
+    if (-not (Test-Path $archivo)) { return $true }
+    $fecha = (Get-Item $archivo).LastWriteTime
+    $nuevo = Get-ChildItem -Path $fuentes -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -gt $fecha } | Select-Object -First 1
+    return $null -ne $nuevo
 }
 
 function Esperar($descripcion, $segundos, [scriptblock]$condicion) {
@@ -95,7 +119,7 @@ if (Escuchando 27017) {
 }
 
 # --------------------------------------------------------------------------------------------
-Paso 'Servidor GraphQL (Java + MongoDB, puerto 8081)'
+Paso 'Microservicio REST de Prestamo (puerto 8082, base libreria_prestamos)'
 
 $java = 'java'
 if ($env:JAVA_HOME -and (Test-Path (Join-Path $env:JAVA_HOME 'bin\java.exe'))) {
@@ -105,12 +129,31 @@ if ($env:JAVA_HOME -and (Test-Path (Join-Path $env:JAVA_HOME 'bin\java.exe'))) {
         Select-Object -First 1
     if ($jdk) { $java = Join-Path $jdk.FullName 'bin\java.exe' }
 }
+# Maven necesita JAVA_HOME con el JDK 17 aunque el java del PATH sea otro.
+if ($java -ne 'java') { $env:JAVA_HOME = Split-Path -Parent (Split-Path -Parent $java) }
+
+if (PrestamosResponde) {
+    Bien 'ya estaba corriendo'
+} else {
+    if (Desactualizado $jarPrestamos @((Join-Path $prestamos 'src\main'), (Join-Path $prestamos 'pom.xml'))) {
+        Aviso 'compilando el microservicio de prestamos (1-2 min)...'
+        Push-Location $prestamos
+        & .\mvnw.cmd -q -DskipTests package
+        Pop-Location
+    }
+    Start-Process cmd -WorkingDirectory $prestamos `
+        -ArgumentList "/k chcp 65001 >nul && title Microservicio Prestamos - puerto 8082 && `"$java`" -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -jar `"$jarPrestamos`""
+    if (Esperar 'El microservicio de prestamos' 90 { PrestamosResponde }) { Bien "listo en $urlPrestamos" }
+}
+
+# --------------------------------------------------------------------------------------------
+Paso 'Microservicio GraphQL de Libro y Ejemplar (puerto 8081, con login)'
 
 if (ServidorResponde) {
     Bien 'ya estaba corriendo'
 } else {
-    if (-not (Test-Path $jar)) {
-        Aviso 'no existe el .jar, compilando el servidor (1-2 min)...'
+    if (Desactualizado $jar @((Join-Path $servidor 'src\main'), (Join-Path $servidor 'pom.xml'))) {
+        Aviso 'compilando el servidor (1-2 min)...'
         Push-Location $servidor
         & .\mvnw.cmd -q -DskipTests package
         Pop-Location
@@ -136,7 +179,7 @@ try {
 # --------------------------------------------------------------------------------------------
 Paso 'MongoDB Compass (ver las colecciones)'
 
-$uriMongo = 'mongodb://localhost:27017/libreria_evaluacion'
+$uriMongo = 'mongodb://localhost:27017'
 $compass = @(
     (Join-Path $env:LOCALAPPDATA 'MongoDBCompass\MongoDBCompass.exe'),
     'C:\Program Files\MongoDB Compass\MongoDBCompass.exe'
@@ -144,11 +187,58 @@ $compass = @(
 if (-not $compass) {
     Aviso 'MongoDB Compass no esta instalado (opcional): winget install MongoDB.Compass.Full'
 } elseif (Get-Process MongoDBCompass -ErrorAction SilentlyContinue) {
-    Bien 'Compass ya estaba abierto'
+    # Compass ignora la cadena de conexion si ya esta abierto: se revisa si de verdad esta conectado.
+    $idsCompass = (Get-Process MongoDBCompass).Id
+    $conectado = netstat -ano | Where-Object {
+        $_ -match ':27017\s+ESTABLISHED\s+(\d+)\s*$' -and $idsCompass -contains [int]$Matches[1]
+    }
+    if ($conectado) {
+        Bien 'Compass ya estaba abierto y conectado'
+    } else {
+        Aviso 'Compass esta abierto sin conexion: pulsa Connect en localhost:27017'
+    }
 } else {
-    # Compass recibe la cadena de conexion y se conecta solo a la base de la entrega.
+    # Compass se conecta al servidor: ahi se ven las dos bases independientes.
     Start-Process -FilePath $compass -ArgumentList $uriMongo
     Bien "Compass abierto y conectado a $uriMongo"
+}
+
+# --------------------------------------------------------------------------------------------
+Paso 'Bruno (coleccion de las APIs GraphQL y REST)'
+
+$coleccion = (Join-Path $raiz 'bruno-libreria') -replace '\\', '/'
+$bruno = @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\bruno\Bruno.exe'),
+    'C:\Program Files\Bruno\Bruno.exe'
+) | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $bruno) {
+    Aviso 'Bruno no esta instalado (opcional): winget install Bruno.Bruno'
+} else {
+    # Agrega la coleccion al espacio de trabajo de Bruno una sola vez, sin tocar las demas.
+    $espacio = Join-Path $env:APPDATA 'bruno\default-workspace\workspace.yml'
+    if (Test-Path $espacio) {
+        $texto = [IO.File]::ReadAllText($espacio)
+        if ($texto -notmatch [regex]::Escape($coleccion)) {
+            $entrada = "collections:`n  - name: `"Libreria - Microservicios`"`n    path: `"$coleccion`"`n"
+            $nuevo = $texto -replace '(?m)^collections:[ \t]*\r?\n', $entrada.Replace('$', '$$')
+            if ($nuevo -ne $texto) {
+                [IO.File]::WriteAllText($espacio, $nuevo, (New-Object System.Text.UTF8Encoding($false)))
+                Bien 'coleccion agregada a Bruno'
+            } else {
+                Aviso "abre la coleccion en Bruno con Open Collection: $coleccion"
+            }
+        } else {
+            Bien 'la coleccion ya estaba en Bruno'
+        }
+    } else {
+        Aviso "abre la coleccion en Bruno con Open Collection: $coleccion"
+    }
+    if (Get-Process Bruno -ErrorAction SilentlyContinue) {
+        Bien 'Bruno ya estaba abierto'
+    } else {
+        Start-Process -FilePath $bruno
+        Bien 'Bruno abierto (elige el entorno Demo)'
+    }
 }
 
 # --------------------------------------------------------------------------------------------
@@ -181,8 +271,8 @@ if (-not $adb) {
 if (-not $adb) {
     Falla 'no se encontro adb (Android platform-tools)'
 } else {
-    if (-not (Test-Path $apk)) {
-        Aviso 'no existe el APK, compilandolo (unos minutos)...'
+    if (Desactualizado $apk @((Join-Path $movil 'lib'), (Join-Path $movil 'pubspec.yaml'))) {
+        Aviso 'compilando el APK con la ultima version (unos minutos)...'
         Push-Location $movil
         & flutter build apk --release --dart-define=URL_GRAPHQL=http://localhost:8081/graphql
         Pop-Location
@@ -229,11 +319,14 @@ if (-not $adb) {
 Write-Host ''
 Write-Host '======================================================================' -ForegroundColor Cyan
 Write-Host ' Todo listo para la demostracion' -ForegroundColor Cyan
-Write-Host "   Servidor:  $urlGraphQL   (consola: http://localhost:8081/graphiql)"
+Write-Host "   Login:     usuario $usuarioLogin / contrasena $claveLogin"
+Write-Host "   GraphQL:   $urlGraphQL   (consola: http://localhost:8081/graphiql)"
+Write-Host '   REST:      http://localhost:8082/prestamos (lo invoca GraphQL, no los clientes)'
 Write-Host "   Web:       $urlWeb"
 Write-Host '   Celular:   app "Libreria" (si se desconecta el cable, ejecutar de nuevo)'
-Write-Host '   MongoDB:   localhost:27017, base "libreria_evaluacion" (colecciones libros y ejemplares)'
-Write-Host '   Compass:   mongodb://localhost:27017/libreria_evaluacion (libros y ejemplares)'
+Write-Host '   MongoDB:   bases "libreria_evaluacion" (libros, ejemplares) y "libreria_prestamos" (prestamos)'
+Write-Host '   Compass:   mongodb://localhost:27017'
+Write-Host '   Bruno:     coleccion "Libreria - Microservicios", entorno Demo'
 Write-Host '   Logs:      ventana "Logs Libreria - web y app" (actualizacion en vivo)'
-Write-Host ' Para apagar: cerrar las ventanas "Servidor GraphQL" y "Cliente web React".'
+Write-Host ' Para apagar: cerrar las ventanas "Servidor GraphQL", "Microservicio Prestamos" y "Cliente web React".'
 Write-Host '======================================================================' -ForegroundColor Cyan

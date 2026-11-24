@@ -3,6 +3,7 @@ package com.libreria.servidor.servicio;
 import com.libreria.servidor.dto.EjemplarInput;
 import com.libreria.servidor.excepciones.LibreriaException;
 import com.libreria.servidor.excepciones.LibreriaException.Tipo;
+import com.libreria.servidor.integracion.ClientePrestamos;
 import com.libreria.servidor.model.Ejemplar;
 import com.libreria.servidor.model.EjemplarConLibro;
 import com.libreria.servidor.model.EstadoEjemplar;
@@ -41,10 +42,12 @@ public class ServicioEjemplar {
 
     private final EjemplarRepository ejemplares;
     private final LibroRepository libros;
+    private final ClientePrestamos prestamos;
 
-    public ServicioEjemplar(EjemplarRepository ejemplares, LibroRepository libros) {
+    public ServicioEjemplar(EjemplarRepository ejemplares, LibroRepository libros, ClientePrestamos prestamos) {
         this.ejemplares = ejemplares;
         this.libros = libros;
+        this.prestamos = prestamos;
     }
 
     // ------------------------------------------------------------------ Listar
@@ -237,13 +240,21 @@ public class ServicioEjemplar {
         }
     }
 
-    /** Elimina el ejemplar y lo devuelve. */
+    /**
+     * Elimina el ejemplar y lo devuelve. Integridad referencial con la clase C: no se elimina si
+     * tiene préstamos; si el servicio de préstamos no responde, tampoco se elimina.
+     */
     public Ejemplar eliminar(String codigo) {
         String buscado = normalizarCodigo(codigo);
         log.info("Eliminar ejemplar: código={}", buscado);
         try {
             Ejemplar ejemplar = ejemplares.findByCodigo(buscado == null ? "" : buscado)
                     .orElseThrow(() -> new LibreriaException(Tipo.NO_ENCONTRADO, mensajeNoExiste(codigo)));
+            long cantidadPrestamos = prestamos.contarPorEjemplar(ejemplar.getCodigo());
+            if (cantidadPrestamos > 0) {
+                throw new LibreriaException(Tipo.REGLA_NEGOCIO, "No se puede eliminar el ejemplar " + buscado
+                        + " porque tiene " + cantidadPrestamos + " préstamo(s) registrado(s). Elimine primero sus préstamos.");
+            }
             ejemplares.delete(ejemplar);
             log.info("Ejemplar eliminado: código={}, _id={}", buscado, ejemplar.getId());
             return ejemplar;

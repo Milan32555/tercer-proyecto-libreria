@@ -1,3 +1,4 @@
+import { cerrarSesion, usuarioAutenticado } from "../sesion";
 import { Link, NavLink } from "react-router-dom";
 import { BookOpenText, House, Info, Library, List, LucideIcon, Pencil, Plus, Search, Trash2 } from "lucide-react";
 
@@ -68,12 +69,14 @@ export default function Navegacion({ prefijo = "nav", alNavegar }: { prefijo?: s
       </ul>
       <Grupo id={`${prefijo}-libros`} titulo="Libros" base="/libros" alNavegar={alNavegar} extra={[DETALLE]} />
       <Grupo id={`${prefijo}-ejemplares`} titulo="Ejemplares" base="/ejemplares" alNavegar={alNavegar} />
+      <Grupo id={`${prefijo}-prestamos`} titulo="Préstamos" base="/prestamos" alNavegar={alNavegar} />
       <div className="nav-grupo">
         <p className="nav-seccion" id={`${prefijo}-ayuda`}>Ayuda</p>
         <ul aria-labelledby={`${prefijo}-ayuda`}>
           <Enlace a="/acerca-de" texto="Acerca de..." icono={Info} alNavegar={alNavegar} />
         </ul>
       </div>
+      {usuarioAutenticado() && <div className="nav-grupo"><button className="nav-enlace sesion-salir" onClick={cerrarSesion}>Cerrar sesión</button></div>}
     </nav>
   );
 }
