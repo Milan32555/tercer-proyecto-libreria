@@ -1,6 +1,6 @@
 # Librería — Tercer Proyecto (Microservicios)
 
-**Desarrollo de Aplicaciones Empresariales · Universidad de Ibagué · 2026B** · Profesor: Carlos Lugo
+**Desarrollo de Aplicaciones Empresariales · Universidad de Ibagué · 2026B**
 **Integrantes:** Misael Gallo Tangarife, Sara Zambrano, Santiago Guimel, Alejandra González · **Versión 3.0.0**
 
 Proyecto final del curso. **Libro (A) → Ejemplar (B)** siguen en MongoDB detrás de GraphQL, y
@@ -299,9 +299,8 @@ La consola GraphiQL queda en <http://localhost:8081/graphiql> y pide el mismo us
   (`orTimeout`) y `exceptionally` + `logger.error` si una falla (las otras dos igual se entregan).
 - **Paginación en todos los Listar** (skip/limit en MongoDB) y filtros siempre en MongoDB. El
   `$lookup` se hace después de paginar: solo une los ejemplares de la página pedida.
-- **Datos de entrega**: base `libreria_evaluacion` inicialmente vacía. El profesor crea los libros y
-  ejemplares desde los clientes y se conservan entre reinicios. Los datos anteriores siguen en
-  `libreria`. La carga de ejemplos requiere `libreria.datos-iniciales.habilitado=true`; el perfil
+- **Datos iniciales**: la base `libreria_evaluacion` empieza vacía. Los libros y ejemplares se crean
+  desde los clientes y se conservan entre reinicios. La carga de ejemplos requiere `libreria.datos-iniciales.habilitado=true`; el perfil
   `carga` usa su propia base `libreria_carga` con 1.000 libros y 5.000 ejemplares.
 
 ## Logging
@@ -362,8 +361,7 @@ entorno **Demo**. Tiene login, GraphQL de Préstamo, Libro y Ejemplar, y el REST
 lanzador la agrega a Bruno y lo abre. Las peticiones de Insertar usan `codigoEjemplar` del entorno,
 que debe ser un ejemplar existente.
 
-**Verificar las colecciones en MongoDB:** `scripts\verificar-mongo.cmd` (usa el driver de MongoDB
-que descarga Maven) o, con `mongosh`:
+**Consultar las colecciones con `mongosh`:**
 
 ```js
 use libreria_evaluacion
@@ -403,29 +401,6 @@ ejemplar → 1 conflicto y el contador queda bien (+1).
 | `ejemplaresConLibro` página 250 de 250 | 9 |
 | `ejemplaresConLibro` filtro PRESTADO | 6 |
 | `resumenInventario` (3 tareas) | 6 |
-
-## Cómo se cumple la rúbrica
-
-| Punto | Dónde |
-|---|---|
-| **Requisito:** arquitectura con GUI, modelo y clases estructurales en paquetes | Tablas de paquetes; clientes en `paginas/` (web) y `pantallas/` (app) |
-| **Requisito:** GraphQL en el primer microservicio | `schema.graphqls` + controllers con `@QueryMapping` / `@MutationMapping` |
-| **Requisito:** segundo microservicio GraphQL o REST | `servicio-prestamos-rest`: `@RestController`, puerto 8082 |
-| **Requisito:** cliente en otro lenguaje | React/TypeScript y Flutter/Dart |
-| **Requisito:** base no relacional | MongoDB + Spring Data; A y B en dos colecciones y C en su propia base |
-| Invocación transparente del segundo microservicio | Los clientes solo llaman a GraphQL; `ServicioPrestamo` usa `ClientePrestamos` |
-| **Insertar C 20 %** con integridad referencial | Adicionar préstamo: el ejemplar debe existir |
-| **Eliminar C 20 %** (buscar antes y mostrar TODO) | Eliminar préstamo: ficha completa y confirmación |
-| **Listar C con parámetro 20 %** (todos los objetos y 2 atributos de A) | Listar préstamos: filtro por ejemplar y estado, con título y autor del libro |
-| **Actualizar C 20 %** (buscar antes y mostrar TODO) | Actualizar préstamo: ficha completa + formulario, con `@Version` |
-| **Consulta C con parámetro 20 %** (UN objeto) | Consultar préstamo por código |
-| Login básico de Spring Security | `SeguridadConfig`, `GET /api/sesion` y pantalla de acceso en web y app |
-| Pruebas de servicio con cobertura del 100 % | JUnit 5 + Mockito; JaCoCo hace fallar `mvn test` si baja de 100 % |
-| Llave primaria, obligatorios, opcionales, validaciones, ≥ 5 atributos | `Prestamo`: `id`, `diasPrestamo` (int), `multa` (double), `prestatario` (String), `fechaPrestamo` (LocalDateTime), `estado` (enum), `observaciones` (opcional) |
-| Prohibido guardar en listas | Todo pasa por `MongoRepository` / `MongoTemplate` |
-| Excepciones con mensajes coherentes | `LibreriaException`, `PrestamoException` y sus manejadores de errores |
-| Una ventana por caso de uso; menú con Ayuda → Acerca de | Rutas de la web y de la app; Acerca de con los 4 integrantes y la versión |
-| Subir a GitHub | Este repositorio, con integración continua (GitHub Actions) |
 
 ## Patrones de diseño
 

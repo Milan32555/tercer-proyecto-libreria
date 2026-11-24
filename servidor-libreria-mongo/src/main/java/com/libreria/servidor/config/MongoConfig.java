@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Conexión con MongoDB (como el MongoConfig del POC del profesor).
+ * Conexión con MongoDB.
  * La URL y la base se leen de application.properties (libreria.mongo.uri y libreria.mongo.base);
  * las pruebas usan la base libreria_test.
  */

@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * Datos de un libro, para crearlo o actualizarlo (un solo input, como pidió el profesor).
+ * Datos de un libro, para crearlo o actualizarlo (un solo input).
  * Al actualizar, el isbn indica qué libro se modifica (no se cambia) y version es la que el
  * cliente leyó al buscarlo: si otro usuario lo cambió entretanto, la actualización se rechaza.
  */

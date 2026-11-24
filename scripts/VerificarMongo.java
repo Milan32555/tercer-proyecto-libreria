@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Verifica en MongoDB lo que pide la rubrica (lo mismo que se revisaria con mongosh):
+ * Verifica la estructura de MongoDB (lo mismo que se revisaria con mongosh):
  * que existan las colecciones libros y ejemplares, sus indices, y que ejemplares.libroId sea un
  * ObjectId que apunta a libros._id (sin referencias huerfanas).
  *

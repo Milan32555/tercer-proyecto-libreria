@@ -24,7 +24,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 /**
- * Servicio con 3 tareas concurrentes (como el POC de Hilos y CompletableFuture):
+ * Servicio con 3 tareas concurrentes usando CompletableFuture:
  * <ol>
  *     <li>contar los libros,</li>
  *     <li>contar los ejemplares por estado (agregación $group),</li>
